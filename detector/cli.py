@@ -24,11 +24,11 @@ from .discovery import get_spec_and_logs, load_config
 @click.group()
 @click.version_option(version="0.1.0")
 def cli():
-    """gh-graveyard - Find and remove unused API endpoints.
+    """gh-api-graveyard - Find and remove unused API endpoints.
     
     Simple commands:
-      gh graveyard scan   - Analyze and generate report
-      gh graveyard prune  - Remove unused endpoints and create PR
+      gh api-graveyard scan   - Analyze and generate report
+      gh api-graveyard prune  - Remove unused endpoints and create PR
     
     Auto-discovers OpenAPI spec and logs, or specify with --spec and --logs.
     """
@@ -152,7 +152,7 @@ def scan(spec, logs, service, window, output):
             f.write(markdown)
         
         click.echo(f"✅ Report written to {output}")
-        click.echo(f"\n💡 Next: Run 'gh graveyard prune --dry-run' to preview cleanup")
+        click.echo(f"\n💡 Next: Run 'gh api-graveyard prune --dry-run' to preview cleanup")
     except Exception as e:
         click.echo(f"❌ Error writing report: {e}", err=True)
         raise click.Abort()
