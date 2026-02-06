@@ -1,0 +1,23 @@
+# Optional configuration file for gh-graveyard
+# Place this file in your repo root as .graveyard.yml
+
+# Path to your OpenAPI specification
+spec: samples/openapi.yaml
+
+# Path to your access logs (JSONL format)
+logs: samples/logs.json
+
+# Service name for reports
+service: Demo API
+
+# Confidence threshold for removal (0-100, default: 80)
+threshold: 80
+
+# Git branch name for PRs
+branch: remove-unused-endpoints
+
+# PR title
+title: Remove unused API endpoints
+
+# Base branch for PRs
+base: main
