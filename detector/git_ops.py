@@ -31,10 +31,6 @@ def create_branch_and_commit(
     try:
         repo = Repo(repo_path, search_parent_directories=True)
         
-        # Check for uncommitted changes
-        if repo.is_dirty():
-            return False, "Repository has uncommitted changes. Please commit or stash them first."
-        
         # Create and checkout new branch
         try:
             new_branch = repo.create_head(branch_name)

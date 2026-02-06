@@ -249,6 +249,19 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
         click.echo(f"💡 Run without --dry-run to create PR")
         return
     
+    # Check git status BEFORE modifying files
+    click.echo("\n🔀 Checking git status...")
+    repo_path = Path.cwd()
+    repo = get_git_repo(repo_path)
+    
+    if not repo:
+        click.echo("❌ Not a git repository", err=True)
+        raise click.Abort()
+    
+    if repo.is_dirty():
+        click.echo("❌ Repository has uncommitted changes. Please commit or stash them first.", err=True)
+        raise click.Abort()
+    
     # Remove endpoints from spec
     click.echo("\n✂️  Removing endpoints from spec...")
     success, message, removed_count = remove_endpoints_from_spec(
@@ -264,7 +277,6 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
     
     # Git operations
     click.echo("\n🔀 Creating git branch...")
-    repo_path = Path.cwd()
     
     success, message = create_branch_and_commit(
         repo_path,
