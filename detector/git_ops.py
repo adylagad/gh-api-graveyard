@@ -21,13 +21,13 @@ def create_branch_and_commit(
     branch_name: str,
     commit_message: str,
     files_to_add: List[str]
-) -> tuple[bool, str]:
+) -> tuple[bool, str, str]:
     """
     Create a new branch, add files, and commit changes.
     If branch exists, creates a new one with a timestamp suffix.
     
     Returns:
-        Tuple of (success, message)
+        Tuple of (success, message, actual_branch_name)
     """
     try:
         repo = Repo(repo_path, search_parent_directories=True)
@@ -43,9 +43,8 @@ def create_branch_and_commit(
             
             new_branch = repo.create_head(final_branch_name)
             new_branch.checkout()
-            branch_name = final_branch_name  # Update for return message
         except Exception as e:
-            return False, f"Failed to create branch: {e}"
+            return False, f"Failed to create branch: {e}", branch_name
         
         # Add specified files
         for file_path in files_to_add:
@@ -54,10 +53,10 @@ def create_branch_and_commit(
         # Commit changes
         repo.index.commit(commit_message)
         
-        return True, f"Created branch '{branch_name}' and committed changes"
+        return True, f"Created branch '{final_branch_name}' and committed changes", final_branch_name
         
     except Exception as e:
-        return False, f"Git operation failed: {e}"
+        return False, f"Git operation failed: {e}", branch_name
 
 
 def push_branch(repo_path: Path, branch_name: str, remote: str = "origin") -> tuple[bool, str]:
