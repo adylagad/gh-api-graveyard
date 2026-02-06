@@ -4,12 +4,9 @@ import click
 import os
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from .utils import (
-    parse_openapi_endpoints,
-    load_logs,
-    analyze_endpoint_usage,
-    generate_markdown_report
-)
+from .parsers import parse_openapi_endpoints, load_logs
+from .analysis import analyze_endpoint_usage
+from .reports import generate_markdown_report
 from .spec_modifier import remove_endpoints_from_spec, format_removed_endpoints_summary
 from .git_ops import (
     get_git_repo,

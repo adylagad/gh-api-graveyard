@@ -1,4 +1,4 @@
-# gh-graveyard
+# gh-api-graveyard
 
 🪦 **The simplest way to find and remove unused API endpoints**
 
@@ -7,7 +7,7 @@ A GitHub CLI extension that automatically analyzes your OpenAPI spec, identifies
 ## Installation
 
 ```bash
-gh extension install yourusername/api-graveyard
+gh extension install adylagad/gh-api-graveyard
 ```
 
 ## Usage - Super Simple! 🚀
@@ -16,11 +16,11 @@ Just two commands:
 
 ```bash
 # 1. Scan and generate report
-gh graveyard scan
+gh api-graveyard scan
 
 # 2. Create PR to remove unused endpoints
-gh graveyard prune --dry-run  # Preview first
-gh graveyard prune            # Create PR
+gh api-graveyard prune --dry-run  # Preview first
+gh api-graveyard prune            # Create PR
 ```
 
 **That's it!** No more long command lines with --spec and --logs flags!
@@ -47,61 +47,39 @@ threshold: 85
 
 Now commands are even simpler - everything uses your config!
 
-```bash
-python -m detector.cli scan \
-  --spec path/to/openapi.yaml \
-  --logs path/to/access.jsonl \
-  --service "My API" \
-  --window 90 \
-  --output report.md
-```
-
-### Optional Config File
-
-Create `.graveyard.yml` in your repo root for custom settings:
-
-```yaml
-spec: api/openapi.yaml
-logs: data/access.jsonl
-service: My API
-threshold: 85
-```
-
-Now commands are even simpler - everything uses your config!
-
 ## Commands
 
-### `gh graveyard scan`
+### `gh api-graveyard scan`
 
 Generate a usage report (auto-discovers spec and logs).
 
 **Basic:**
 ```bash
-gh graveyard scan
+gh api-graveyard scan
 ```
 
 **With options:**
 ```bash
-gh graveyard scan --spec api.yaml --logs logs.jsonl --service "My API"
+gh api-graveyard scan --spec api.yaml --logs logs.jsonl --service "My API"
 ```
 
-### `gh graveyard prune`
+### `gh api-graveyard prune`
 
 Remove unused endpoints and create a PR (auto-discovers everything).
 
 **Preview first (recommended):**
 ```bash
-gh graveyard prune --dry-run
+gh api-graveyard prune --dry-run
 ```
 
 **Create PR:**
 ```bash
-gh graveyard prune
+gh api-graveyard prune
 ```
 
 **With custom threshold:**
 ```bash
-gh graveyard prune --threshold 90
+gh api-graveyard prune --threshold 90
 ```
 
 ## Examples
@@ -117,8 +95,8 @@ Just put your files in standard locations and run:
 # └── logs/
 #     └── access.jsonl      # ← Auto-discovered
 
-gh graveyard scan    # Works automatically!
-gh graveyard prune --dry-run
+gh api-graveyard scan    # Works automatically!
+gh api-graveyard prune --dry-run
 ```
 
 ### With Config File
@@ -132,8 +110,8 @@ threshold: 85
 ```
 
 ```bash
-gh graveyard scan    # Uses all config values
-gh graveyard prune   # Uses config defaults
+gh api-graveyard scan    # Uses all config values
+gh api-graveyard prune   # Uses config defaults
 ```
 
 ### Manual Override
@@ -141,7 +119,7 @@ gh graveyard prune   # Uses config defaults
 Config file present but want to use different files:
 
 ```bash
-gh graveyard scan --spec other-api.yaml --logs other-logs.jsonl
+gh api-graveyard scan --spec other-api.yaml --logs other-logs.jsonl
 ```
 
 ## What Gets Analyzed
@@ -180,7 +158,6 @@ JSONL format (one JSON object per line):
 **Optional:** `timestamp`, `caller`/`user`/`client_id`
 
 ## Advanced Options
-## Advanced Options
 
 All commands support these optional flags:
 
@@ -197,8 +174,8 @@ All commands support these optional flags:
 ## Development
 
 ```bash
-git clone https://github.com/yourusername/api-graveyard.git
-cd api-graveyard
+git clone https://github.com/adylagad/gh-api-graveyard.git
+cd gh-api-graveyard
 pip install -e .
 gh extension install .
 ```
@@ -207,13 +184,16 @@ gh extension install .
 
 ```
 .
-├── gh-graveyard           # CLI entry point
+├── gh-api-graveyard       # CLI entry point
 ├── .graveyard.yml        # Optional config
 ├── detector/
-│   ├── cli.py           # Commands
-│   ├── discovery.py     # Auto-discovery logic
-│   ├── utils.py         # Analysis
-│   └── git_ops.py       # Git/GitHub ops
+│   ├── cli.py           # CLI commands
+│   ├── parsers.py       # OpenAPI & log parsing
+│   ├── analysis.py      # Usage analysis logic
+│   ├── reports.py       # Report generation
+│   ├── spec_modifier.py # Spec file modification
+│   ├── git_ops.py       # Git/GitHub operations
+│   └── discovery.py     # Auto-discovery logic
 └── samples/             # Example files
 ```
 
@@ -224,8 +204,8 @@ Use in CI to auto-scan PRs:
 ```yaml
 - name: Scan for unused endpoints
   run: |
-    gh extension install owner/api-graveyard
-    gh graveyard scan
+    gh extension install adylagad/gh-api-graveyard
+    gh api-graveyard scan
 ```
 
 ## Contributing
