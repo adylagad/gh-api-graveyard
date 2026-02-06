@@ -4,7 +4,7 @@
 
 A GitHub CLI extension that automatically analyzes your OpenAPI spec, identifies unused endpoints, and creates PRs to remove them.
 
-## Installation
+## 📦 Installation
 
 ```bash
 gh extension install adylagad/gh-api-graveyard
@@ -25,16 +25,16 @@ gh api-graveyard prune            # Create PR
 
 **That's it!** No more long command lines with --spec and --logs flags!
 
-## How It Works
+## 🔧 How It Works
 
 ### Auto-Discovery ✨
 
 The tool automatically finds:
-- **OpenAPI spec**: Searches for `openapi.yaml`, `spec/openapi.yaml`, `api-spec.yaml`, etc.
-- **Log files**: Searches for `logs/*.jsonl`, `access.jsonl`, `logs.json`, etc.
-- **Config**: Reads `.graveyard.yml` if present for custom settings
+- 📄 **OpenAPI spec**: Searches for `openapi.yaml`, `spec/openapi.yaml`, `api-spec.yaml`, etc.
+- 📋 **Log files**: Searches for `logs/*.jsonl`, `access.jsonl`, `logs.json`, etc.
+- ⚙️ **Config**: Reads `.graveyard.yml` if present for custom settings
 
-### Optional Config File
+### ⚙️ Optional Config File
 
 Create `.graveyard.yml` in your repo root for custom settings:
 
@@ -47,9 +47,9 @@ threshold: 85
 
 Now commands are even simpler - everything uses your config!
 
-## Commands
+## 💻 Commands
 
-### `gh api-graveyard scan`
+### `gh api-graveyard scan` 🔍
 
 Generate a usage report (auto-discovers spec and logs).
 
@@ -63,7 +63,7 @@ gh api-graveyard scan
 gh api-graveyard scan --spec api.yaml --logs logs.jsonl --service "My API"
 ```
 
-### `gh api-graveyard prune`
+### `gh api-graveyard prune` ✂️
 
 Remove unused endpoints and create a PR (auto-discovers everything).
 
@@ -82,7 +82,7 @@ gh api-graveyard prune
 gh api-graveyard prune --threshold 90
 ```
 
-## Examples
+## 📚 Examples
 
 ### Minimal Setup
 
@@ -122,30 +122,30 @@ Config file present but want to use different files:
 gh api-graveyard scan --spec other-api.yaml --logs other-logs.jsonl
 ```
 
-## What Gets Analyzed
+## 🧠 What Gets Analyzed
 
 The tool:
-1. **Finds** all endpoints in your OpenAPI spec
-2. **Matches** log entries to endpoints using path templates
-3. **Calculates** confidence scores based on:
+1. 🔍 **Finds** all endpoints in your OpenAPI spec
+2. 🔗 **Matches** log entries to endpoints using path templates
+3. 📈 **Calculates** confidence scores based on:
    - Call frequency (fewer calls = higher score)
    - Recency (older = higher score)
    - Caller diversity (fewer callers = higher score)
-4. **Reports** findings in markdown table
-5. **Removes** high-confidence unused endpoints (prune mode)
-6. **Creates** PR with detailed analysis
+4. 📊 **Reports** findings in markdown table
+5. ✂️ **Removes** high-confidence unused endpoints (prune mode)
+6. 🔀 **Creates** PR with detailed analysis
 
-## Confidence Scores
+## 📊 Confidence Scores
 
-- **100**: Never called
-- **80-99**: Very likely unused
-- **60-79**: Possibly unused  
-- **40-59**: Moderate usage
-- **0-39**: Actively used
+- 💀 **100**: Never called
+- 🔴 **80-99**: Very likely unused
+- 🟠 **60-79**: Possibly unused  
+- 🟡 **40-59**: Moderate usage
+- 🟢 **0-39**: Actively used
 
 Default threshold for removal: **80**
 
-## Log Format
+## 📝 Log Format
 
 JSONL format (one JSON object per line):
 
@@ -155,9 +155,9 @@ JSONL format (one JSON object per line):
 ```
 
 **Required:** `method`, `path`  
-**Optional:** `timestamp`, `caller`/`user`/`client_id`
+**Optional:** `timestamp`, `caller`/`user`/`client_id` 👤
 
-## Advanced Options
+## ⚡ Advanced Options
 
 All commands support these optional flags:
 
@@ -171,7 +171,7 @@ All commands support these optional flags:
 - `--base BRANCH`: Base branch for PR (default: main)
 - `--dry-run`: Preview without making changes
 
-## Development
+## 🛠️ Development
 
 ```bash
 git clone https://github.com/adylagad/gh-api-graveyard.git
@@ -180,7 +180,7 @@ pip install -e .
 gh extension install .
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 .
@@ -197,7 +197,7 @@ gh extension install .
 └── samples/             # Example files
 ```
 
-## GitHub Actions
+## 🔄 GitHub Actions
 
 Use in CI to auto-scan PRs:
 
@@ -208,10 +208,10 @@ Use in CI to auto-scan PRs:
     gh api-graveyard scan
 ```
 
-## Contributing
+## 🤝 Contributing
 
 PRs welcome! Open an issue first for major changes.
 
-## License
+## 📄 License
 
 MIT

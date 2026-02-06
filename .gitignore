@@ -44,3 +44,9 @@ Thumbs.db
 *.md
 !README.md
 !SUBMISSION.md
+!QUICKSTART.md
+!TESTING.md
+!DEVELOPMENT.md
+
+# API Graveyard reports
+api-graveyard-report.md
