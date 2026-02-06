@@ -24,6 +24,7 @@ def create_branch_and_commit(
 ) -> tuple[bool, str]:
     """
     Create a new branch, add files, and commit changes.
+    If branch exists, creates a new one with a timestamp suffix.
     
     Returns:
         Tuple of (success, message)
@@ -33,8 +34,16 @@ def create_branch_and_commit(
         
         # Create and checkout new branch
         try:
-            new_branch = repo.create_head(branch_name)
+            # Check if branch exists, if so append timestamp
+            final_branch_name = branch_name
+            if branch_name in [b.name for b in repo.branches]:
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                final_branch_name = f"{branch_name}-{timestamp}"
+            
+            new_branch = repo.create_head(final_branch_name)
             new_branch.checkout()
+            branch_name = final_branch_name  # Update for return message
         except Exception as e:
             return False, f"Failed to create branch: {e}"
         
