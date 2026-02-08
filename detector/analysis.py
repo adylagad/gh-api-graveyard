@@ -1,7 +1,7 @@
 """Endpoint usage analysis logic."""
 
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional, Union
 
 
 def match_log_to_spec(
@@ -67,14 +67,19 @@ def match_log_to_spec(
 
 
 def analyze_endpoint_usage(
-    spec_endpoints: List[Dict[str, str]], logs: List[Dict], current_time: Optional[datetime] = None
+    spec_endpoints: List[Dict[str, str]],
+    logs: Union[List[Dict], Iterable[Dict]],
+    current_time: Optional[datetime] = None,
 ) -> List[Dict]:
     """
     Analyze endpoint usage from logs and compute unused confidence scores.
 
+    This function now supports both lists and iterables (generators), making it
+    memory-efficient for large log files.
+
     Args:
         spec_endpoints: List of endpoint dicts with 'method' and 'path'
-        logs: List of log entries with 'method', 'path', 'timestamp', 'caller'
+        logs: List or iterable of log entries with 'method', 'path', 'timestamp', 'caller'
         current_time: Reference time for age calculation (defaults to now)
 
     Returns:

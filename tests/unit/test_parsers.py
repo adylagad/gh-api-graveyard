@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from detector.parsers import load_logs, parse_openapi_endpoints
+from detector.parsers import (
+    count_log_entries,
+    load_logs,
+    parse_openapi_endpoints,
+    stream_logs,
+)
 
 
 @pytest.fixture
@@ -183,3 +188,78 @@ class TestParseLogs:
         assert logs[0]["path"] == "/test"
         assert logs[0]["status"] == 200
         assert logs[0]["user_id"] == "abc"
+
+
+class TestStreamLogs:
+    """Tests for stream_logs generator function."""
+
+    def test_stream_valid_logs(self, sample_logs):
+        """Test streaming valid JSONL log file."""
+        logs = list(stream_logs(sample_logs))
+
+        assert len(logs) == 6
+        assert logs[0]["method"] == "GET"
+        assert logs[0]["path"] == "/users"
+        assert logs[0]["caller"] == "web-app"
+
+    def test_stream_returns_generator(self, sample_logs):
+        """Test that stream_logs returns a generator."""
+        result = stream_logs(sample_logs)
+
+        # Check it's a generator
+        assert hasattr(result, "__iter__")
+        assert hasattr(result, "__next__")
+
+    def test_stream_memory_efficient(self, tmp_path):
+        """Test that streaming doesn't load all entries at once."""
+        # Create a file with many entries
+        large_file = tmp_path / "large.jsonl"
+        with open(large_file, "w") as f:
+            for i in range(1000):
+                f.write(f'{{"method": "GET", "path": "/test/{i}"}}\n')
+
+        # Stream and process one at a time
+        count = 0
+        for log in stream_logs(large_file):
+            count += 1
+            assert "method" in log
+            if count == 10:  # Only process first 10
+                break
+
+        assert count == 10
+
+    def test_stream_invalid_json_lines(self, invalid_logs, capsys):
+        """Test streaming logs with invalid JSON lines."""
+        logs = list(stream_logs(invalid_logs))
+
+        # Should skip invalid lines and parse valid ones
+        assert len(logs) == 2
+        assert logs[0]["method"] == "GET"
+        assert logs[1]["method"] == "POST"
+
+    def test_stream_nonexistent_file(self, tmp_path):
+        """Test streaming nonexistent file returns empty."""
+        nonexistent = tmp_path / "nonexistent.jsonl"
+        logs = list(stream_logs(nonexistent))
+        assert logs == []
+
+
+class TestCountLogEntries:
+    """Tests for count_log_entries function."""
+
+    def test_count_valid_logs(self, sample_logs):
+        """Test counting log entries."""
+        count = count_log_entries(sample_logs)
+        assert count == 6
+
+    def test_count_empty_file(self, tmp_path):
+        """Test counting empty file."""
+        empty_file = tmp_path / "empty.jsonl"
+        empty_file.write_text("")
+        count = count_log_entries(empty_file)
+        assert count == 0
+
+    def test_count_skips_invalid_lines(self, invalid_logs):
+        """Test that count skips invalid JSON lines."""
+        count = count_log_entries(invalid_logs)
+        assert count == 2  # Only valid lines
