@@ -1,0 +1,6 @@
+{"method": "GET", "path": "/users", "timestamp": "2026-02-01T10:00:00Z", "caller": "web-app"}
+{"method": "GET", "path": "/users/123", "timestamp": "2026-02-01T11:00:00Z", "caller": "web-app"}
+{"method": "POST", "path": "/users", "timestamp": "2026-02-01T12:00:00Z", "caller": "mobile-app"}
+{"method": "GET", "path": "/users/456", "timestamp": "2026-02-02T10:00:00Z", "caller": "web-app"}
+{"method": "GET", "path": "/users", "timestamp": "2026-02-02T11:00:00Z", "caller": "api-client"}
+{"method": "GET", "path": "/users/789", "timestamp": "2026-02-03T10:00:00Z", "caller": "mobile-app"}

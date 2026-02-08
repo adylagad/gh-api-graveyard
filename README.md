@@ -1,5 +1,10 @@
 # gh-api-graveyard
 
+[![Tests](https://github.com/adylagad/gh-api-graveyard/workflows/Tests%20and%20Code%20Quality/badge.svg)](https://github.com/adylagad/gh-api-graveyard/actions)
+[![codecov](https://codecov.io/gh/adylagad/gh-api-graveyard/branch/main/graph/badge.svg)](https://codecov.io/gh/adylagad/gh-api-graveyard)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 🪦 **The simplest way to find and remove unused API endpoints**
 
 A GitHub CLI extension that automatically analyzes your OpenAPI spec, identifies unused endpoints, and creates PRs to remove them.
@@ -195,6 +200,49 @@ gh extension install .
 │   ├── git_ops.py       # Git/GitHub operations
 │   └── discovery.py     # Auto-discovery logic
 └── samples/             # Example files
+```
+
+## 🛠️ Development
+
+### Setup
+
+```bash
+git clone https://github.com/adylagad/gh-api-graveyard.git
+cd gh-api-graveyard
+pip install -e ".[dev]"
+gh extension install .
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=detector --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_parsers.py -v
+```
+
+### Code Quality
+
+```bash
+# Format code
+black detector/ tests/
+
+# Sort imports
+isort detector/ tests/ --profile black
+
+# Lint
+flake8 detector/ tests/
+
+# Type check
+mypy detector/ --ignore-missing-imports
+
+# Run all checks
+black detector/ tests/ && isort detector/ tests/ --profile black && flake8 detector/ tests/ && mypy detector/
 ```
 
 ## 🔄 GitHub Actions
