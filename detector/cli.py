@@ -210,9 +210,7 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
         click.echo("💡 All endpoints appear to be in use!")
         return
 
-    click.echo(
-        f"\n🎯 Found {len(to_remove)} endpoint(s) to remove (confidence >= {threshold}):\n"
-    )
+    click.echo(f"\n🎯 Found {len(to_remove)} endpoint(s) to remove (confidence >= {threshold}):\n")
     for ep in to_remove:
         confidence = ep["confidence_score"]
         calls = ep["call_count"]
