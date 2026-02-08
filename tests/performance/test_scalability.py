@@ -81,7 +81,6 @@ class TestScalability:
         assert elapsed < 10.0  # Should complete in under 10 seconds (CI is slower)
 
 
-
 class TestPerformanceBenchmarks:
     """Benchmark tests for performance tracking."""
 
