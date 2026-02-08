@@ -1,14 +1,8 @@
 """Unit tests for detector.discovery module."""
 
-from pathlib import Path
-
 import pytest
 
-from detector.discovery import (
-    find_log_files,
-    find_openapi_spec,
-    load_config,
-)
+from detector.discovery import find_log_files, find_openapi_spec, load_config
 
 
 @pytest.fixture

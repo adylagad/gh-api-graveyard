@@ -1,6 +1,5 @@
 """Auto-discovery of OpenAPI specs and log files."""
 
-import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 

@@ -1,6 +1,5 @@
 """Unit tests for detector.parsers module."""
 
-import json
 from pathlib import Path
 
 import pytest

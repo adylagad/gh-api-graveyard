@@ -70,7 +70,8 @@ def generate_markdown_report(
             reasons = reasons[:57] + "..."
 
         md.append(
-            f"| {confidence} | {method} | {path} | {calls} | {last_seen} | {callers} | {reasons} |\n"
+            f"| {confidence} | {method} | {path} | {calls} | "
+            f"{last_seen} | {callers} | {reasons} |\n"
         )
 
     # Add legend

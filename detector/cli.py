@@ -1,6 +1,5 @@
 """Command-line interface for OpenAPI Analyzer."""
 
-import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -102,7 +101,6 @@ def scan(spec, logs, service, window, output):
     # Filter logs by time window if specified
     if window:
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=window)
-        original_count = len(log_entries)
 
         filtered_logs = []
         for log in log_entries:
@@ -144,7 +142,7 @@ def scan(spec, logs, service, window, output):
             f.write(markdown)
 
         click.echo(f"✅ Report written to {output}")
-        click.echo(f"\n💡 Next: Run 'gh api-graveyard prune --dry-run' to preview cleanup")
+        click.echo("\n💡 Next: Run 'gh api-graveyard prune --dry-run' to preview cleanup")
     except Exception as e:
         click.echo(f"❌ Error writing report: {e}", err=True)
         raise click.Abort()
@@ -209,21 +207,24 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
 
     if not to_remove:
         click.echo(f"\n✨ No endpoints found with confidence >= {threshold}")
-        click.echo(f"💡 All endpoints appear to be in use!")
+        click.echo("💡 All endpoints appear to be in use!")
         return
 
-    click.echo(f"\n🎯 Found {len(to_remove)} endpoint(s) to remove (confidence >= {threshold}):\n")
+    click.echo(
+        f"\n🎯 Found {len(to_remove)} endpoint(s) to remove (confidence >= {threshold}):\n"
+    )
     for ep in to_remove:
         confidence = ep["confidence_score"]
         calls = ep["call_count"]
         last = ep["last_seen"][:10] if ep["last_seen"] else "Never"
         click.echo(
-            f"   • {ep['method']:6} {ep['path']:40} confidence={confidence} calls={calls} last={last}"
+            f"   • {ep['method']:6} {ep['path']:40} "
+            f"confidence={confidence} calls={calls} last={last}"
         )
 
     if dry_run:
         click.echo("\n🔍 Dry run mode - no changes made")
-        click.echo(f"💡 Run without --dry-run to create PR")
+        click.echo("💡 Run without --dry-run to create PR")
         return
 
     # Check git status BEFORE modifying files
@@ -283,7 +284,7 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
                 if actual_branch in [b.name for b in repo.heads]:
                     repo.delete_head(actual_branch, force=True)
                 click.echo("🔄 Cleaned up failed branch", err=True)
-            except:
+            except Exception:
                 pass
             raise click.Abort()
 
@@ -297,7 +298,7 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
         click.echo("🔄 Rolling back changes...", err=True)
         try:
             repo.git.checkout("--", str(spec_path))
-        except:
+        except Exception:
             pass
         raise click.Abort()
 
@@ -313,7 +314,7 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
     owner, repo_name = repo_info
 
     # Build PR body
-    pr_body = f"## 🪦 API Graveyard: Automated Cleanup\n\n"
+    pr_body = "## 🪦 API Graveyard: Automated Cleanup\n\n"
     pr_body += f"Automatically removed **{removed_count}** unused endpoint(s) "
     pr_body += f"with confidence score >= {threshold}.\n\n"
     pr_body += format_removed_endpoints_summary(to_remove)
@@ -328,9 +329,9 @@ def prune(spec, logs, threshold, branch, title, base, dry_run):
         click.echo(f"❌ {message}", err=True)
         raise click.Abort()
 
-    click.echo(f"   ✅ Pull request created!\n")
+    click.echo("   ✅ Pull request created!\n")
     click.echo(f"🔗 {pr_url}")
-    click.echo(f"\n🎉 Done! Review and merge the PR to clean up your API.")
+    click.echo("\n🎉 Done! Review and merge the PR to clean up your API.")
 
 
 def main():

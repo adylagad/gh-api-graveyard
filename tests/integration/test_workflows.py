@@ -1,7 +1,5 @@
 """Integration tests for gh-api-graveyard."""
 
-from pathlib import Path
-
 import pytest
 import yaml
 
@@ -34,10 +32,14 @@ def test_repo(tmp_path):
     log_file = logs_dir / "access.jsonl"
 
     logs = [
-        '{"method": "GET", "path": "/users", "timestamp": "2026-02-01T10:00:00Z", "caller": "web"}',
-        '{"method": "GET", "path": "/users/123", "timestamp": "2026-02-01T11:00:00Z", "caller": "web"}',
-        '{"method": "GET", "path": "/users/456", "timestamp": "2026-02-02T10:00:00Z", "caller": "mobile"}',
-        '{"method": "GET", "path": "/users", "timestamp": "2026-02-03T10:00:00Z", "caller": "api"}',
+        '{"method": "GET", "path": "/users", "timestamp": "2026-02-01T10:00:00Z", '
+        '"caller": "web"}',
+        '{"method": "GET", "path": "/users/123", "timestamp": "2026-02-01T11:00:00Z", '
+        '"caller": "web"}',
+        '{"method": "GET", "path": "/users/456", "timestamp": "2026-02-02T10:00:00Z", '
+        '"caller": "mobile"}',
+        '{"method": "GET", "path": "/users", "timestamp": "2026-02-03T10:00:00Z", '
+        '"caller": "api"}',
     ]
 
     with open(log_file, "w") as f:
@@ -63,9 +65,12 @@ class TestScanWorkflow:
         log_file = test_repo / "logs" / "access.jsonl"
 
         additional_logs = [
-            '{"method": "DELETE", "path": "/users/789", "timestamp": "2026-02-04T10:00:00Z", "caller": "admin"}',
-            '{"method": "GET", "path": "/posts", "timestamp": "2026-02-05T10:00:00Z", "caller": "web"}',
-            '{"method": "GET", "path": "/admin/debug", "timestamp": "2026-02-06T10:00:00Z", "caller": "ops"}',
+            '{"method": "DELETE", "path": "/users/789", "timestamp": "2026-02-04T10:00:00Z", '
+            '"caller": "admin"}',
+            '{"method": "GET", "path": "/posts", "timestamp": "2026-02-05T10:00:00Z", '
+            '"caller": "web"}',
+            '{"method": "GET", "path": "/admin/debug", "timestamp": "2026-02-06T10:00:00Z", '
+            '"caller": "ops"}',
         ]
 
         with open(log_file, "a") as f:

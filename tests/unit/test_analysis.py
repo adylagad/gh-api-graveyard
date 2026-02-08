@@ -1,13 +1,6 @@
 """Unit tests for detector.analysis module."""
 
-from datetime import datetime, timedelta
-
-import pytest
-
-from detector.analysis import (
-    analyze_endpoint_usage,
-    match_log_to_spec,
-)
+from detector.analysis import analyze_endpoint_usage, match_log_to_spec
 
 
 class TestMatchLogToSpec:

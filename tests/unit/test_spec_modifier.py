@@ -1,7 +1,5 @@
 """Unit tests for detector.spec_modifier module."""
 
-from pathlib import Path
-
 import pytest
 import yaml
 

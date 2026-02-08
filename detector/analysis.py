@@ -160,7 +160,7 @@ def analyze_endpoint_usage(
             # Adjust for call frequency
             if call_count == 1:
                 confidence += 30
-                reasons.append(f"Called only once")
+                reasons.append("Called only once")
             elif call_count <= 5:
                 confidence += 20
                 reasons.append(f"Very low call count ({call_count} calls)")
@@ -197,7 +197,7 @@ def analyze_endpoint_usage(
             # Adjust for caller diversity
             if unique_callers == 1:
                 confidence += 10
-                reasons.append(f"Single caller only")
+                reasons.append("Single caller only")
             elif unique_callers <= 3:
                 confidence += 5
                 reasons.append(f"Few unique callers ({unique_callers})")

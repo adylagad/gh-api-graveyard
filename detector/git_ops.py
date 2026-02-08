@@ -1,9 +1,8 @@
 """Git and GitHub operations for automated PR creation."""
 
 import os
-import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional, Tuple
 
 from git import Repo
 from github import Github, GithubException
@@ -19,7 +18,7 @@ def get_git_repo(path: Path) -> Optional[Repo]:
 
 def create_branch_and_commit(
     repo_path: Path, branch_name: str, commit_message: str, files_to_add: List[str]
-) -> tuple[bool, str, str]:
+) -> Tuple[bool, str, str]:
     """
     Create a new branch, add files, and commit changes.
     If branch exists, creates a new one with a timestamp suffix.
@@ -62,7 +61,7 @@ def create_branch_and_commit(
         return False, f"Git operation failed: {e}", branch_name
 
 
-def push_branch(repo_path: Path, branch_name: str, remote: str = "origin") -> tuple[bool, str]:
+def push_branch(repo_path: Path, branch_name: str, remote: str = "origin") -> Tuple[bool, str]:
     """
     Push branch to remote.
 
@@ -95,7 +94,7 @@ def create_github_pr(
     body: str,
     base_branch: str = "main",
     token: Optional[str] = None,
-) -> tuple[bool, str, Optional[str]]:
+) -> Tuple[bool, str, Optional[str]]:
     """
     Create a GitHub Pull Request.
 
@@ -131,7 +130,7 @@ def create_github_pr(
         # Create pull request
         try:
             pr = repo.create_pull(title=title, body=body, head=branch_name, base=base_branch)
-            return True, f"Pull request created successfully", pr.html_url
+            return True, "Pull request created successfully", pr.html_url
 
         except GithubException as e:
             return False, f"Failed to create PR: {e}", None
@@ -140,7 +139,7 @@ def create_github_pr(
         return False, f"GitHub operation failed: {e}", None
 
 
-def get_github_repo_info(repo_path: Path) -> Optional[tuple[str, str]]:
+def get_github_repo_info(repo_path: Path) -> Optional[Tuple[str, str]]:
     """
     Extract GitHub owner and repo name from git remote.
 
