@@ -142,6 +142,24 @@ def scan(spec, logs, service, window, output):
             f.write(markdown)
 
         click.echo(f"✅ Report written to {output}")
+
+        # Save to database for historical tracking
+        try:
+            from detector.database import DatabaseManager
+
+            db = DatabaseManager()
+            db.create_tables()
+
+            db.save_scan(
+                service_name=service or "default",
+                results=results,
+                spec_path=str(spec_path),
+                logs_path=str(logs_path),
+            )
+            click.echo("✓ Scan saved to history database")
+        except Exception as e:
+            click.echo(f"Warning: Could not save to database: {e}", err=True)
+
         click.echo("\n💡 Next: Run 'gh api-graveyard prune --dry-run' to preview cleanup")
     except Exception as e:
         click.echo(f"❌ Error writing report: {e}", err=True)
@@ -404,3 +422,188 @@ def discover_org(org_name, token, output, max_repos, exclude):
     click.echo(f"\nDiscovered {len(config.services)} services")
     click.echo(f"Configuration saved to: {output}")
     click.echo(f"\nNext: gh api-graveyard scan-multi --config {output}")
+
+
+@cli.command()
+@click.option("--service", help="Filter by service name")
+@click.option("--limit", default=10, type=int, help="Number of scans to show")
+def history(service, limit):
+    """Show scan history."""
+    from detector.database import DatabaseManager
+
+    db = DatabaseManager()
+    scans = db.get_scans(service_name=service, limit=limit)
+
+    if not scans:
+        click.echo("No scan history found.")
+        return
+
+    click.echo("\n" + "=" * 80)
+    click.echo("SCAN HISTORY")
+    click.echo("=" * 80)
+
+    for scan in scans:
+        status = "✓" if scan.success else "✗"
+        click.echo(f"\n{status} Scan #{scan.id} - {scan.service_name}")
+        click.echo(f"  Time: {scan.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+        click.echo(f"  Endpoints: {scan.total_endpoints} total, {scan.unused_endpoints} unused")
+        if scan.scan_duration_seconds:
+            click.echo(f"  Duration: {scan.scan_duration_seconds:.2f}s")
+        if scan.repo:
+            click.echo(f"  Repo: {scan.repo}")
+
+
+@cli.command()
+@click.argument("service_name")
+@click.option("--days", default=30, type=int, help="Number of days to analyze")
+def trends(service_name, days):
+    """Show usage trends for a service."""
+    from detector.analytics import TrendAnalyzer
+    from detector.database import DatabaseManager
+
+    db = DatabaseManager()
+    analyzer = TrendAnalyzer(db)
+
+    click.echo(f"\nAnalyzing trends for {service_name} over last {days} days...")
+
+    trend_data = analyzer.get_trend_data(service_name, days=days)
+
+    if "error" in trend_data:
+        click.echo(f"Error: {trend_data['error']}")
+        return
+
+    click.echo("\n" + "=" * 80)
+    click.echo(f"TREND ANALYSIS: {service_name}")
+    click.echo("=" * 80)
+
+    # Current state
+    current = trend_data["current"]
+    click.echo("\nCurrent State:")
+    click.echo(f"  Total endpoints: {current['total_endpoints']}")
+    click.echo(
+        f"  Unused endpoints: {current['unused_endpoints']} ({current['unused_percentage']}%)"
+    )
+
+    # Trends
+    trends_info = trend_data["trends"]
+    click.echo(f"\nTrends ({trend_data['scans_count']} scans):")
+    click.echo(
+        f"  Endpoint count: {trends_info['endpoint_trend']} ({trends_info['endpoint_change']:+d})"
+    )
+    click.echo(f"  Unused count: {trends_info['unused_trend']} ({trends_info['unused_change']:+d})")
+
+    # Averages
+    averages = trend_data["averages"]
+    click.echo("\nAverages:")
+    click.echo(f"  Avg total: {averages['avg_total_endpoints']}")
+    click.echo(
+        f"  Avg unused: {averages['avg_unused_endpoints']} ({averages['avg_unused_percentage']}%)"
+    )
+
+
+@cli.command()
+@click.argument("scan1_id", type=int)
+@click.argument("scan2_id", type=int)
+def compare(scan1_id, scan2_id):
+    """Compare two scans."""
+    from detector.analytics import TrendAnalyzer
+    from detector.database import DatabaseManager
+
+    db = DatabaseManager()
+    analyzer = TrendAnalyzer(db)
+
+    try:
+        comparison = analyzer.compare_scans(scan1_id, scan2_id)
+    except ValueError as e:
+        click.echo(f"Error: {e}")
+        return
+
+    click.echo("\n" + "=" * 80)
+    click.echo("SCAN COMPARISON")
+    click.echo("=" * 80)
+
+    # Scan info
+    click.echo(f"\nScan 1: #{comparison['scan1']['id']} at {comparison['scan1']['timestamp']}")
+    click.echo(
+        f"  Endpoints: {comparison['scan1']['total_endpoints']} total, {comparison['scan1']['unused_endpoints']} unused"
+    )
+
+    click.echo(f"\nScan 2: #{comparison['scan2']['id']} at {comparison['scan2']['timestamp']}")
+    click.echo(
+        f"  Endpoints: {comparison['scan2']['total_endpoints']} total, {comparison['scan2']['unused_endpoints']} unused"
+    )
+
+    # Changes
+    changes = comparison["changes"]
+    summary = comparison["summary"]
+
+    click.echo("\nChanges:")
+    click.echo(f"  Added: {summary['endpoints_added']} endpoints")
+    click.echo(f"  Removed: {summary['endpoints_removed']} endpoints")
+    click.echo(f"  Became unused: {summary['endpoints_became_unused']} endpoints")
+    click.echo(f"  Became used: {summary['endpoints_became_used']} endpoints")
+    click.echo(f"  Unused change: {summary['unused_change']:+d}")
+
+    if changes["became_unused"]:
+        click.echo("\nEndpoints that became unused:")
+        for endpoint in changes["became_unused"][:10]:
+            click.echo(f"  - {endpoint}")
+
+    if changes["became_used"]:
+        click.echo("\nEndpoints that became used:")
+        for endpoint in changes["became_used"][:10]:
+            click.echo(f"  - {endpoint}")
+
+
+@cli.command()
+@click.argument("service_name")
+def cost_analysis(service_name):
+    """Analyze cost savings from removing unused endpoints."""
+    from detector.analytics import CostCalculator
+    from detector.database import DatabaseManager
+
+    db = DatabaseManager()
+
+    # Get most recent scan
+    scans = db.get_scans(service_name=service_name, limit=1)
+    if not scans:
+        click.echo(f"No scans found for service: {service_name}")
+        return
+
+    scan = scans[0]
+    session = db.get_session()
+    try:
+        # Get unused endpoints
+        unused = [
+            {
+                "method": e.method,
+                "path": e.path,
+                "call_count": e.call_count,
+            }
+            for e in scan.endpoints
+            if e.call_count == 0
+        ]
+
+        calculator = CostCalculator()
+        savings = calculator.calculate_savings(unused)
+
+        click.echo("\n" + "=" * 80)
+        click.echo(f"COST ANALYSIS: {service_name}")
+        click.echo("=" * 80)
+
+        click.echo(f"\nUnused endpoints: {savings['total_unused_endpoints']}")
+        click.echo("\nPotential Savings:")
+        click.echo(f"  Monthly: ${savings['monthly_savings_usd']}")
+        click.echo(f"  Annual: ${savings['annual_savings_usd']}")
+        click.echo(f"  3-Year: ${savings['three_year_savings_usd']}")
+
+        click.echo("\nAssumptions:")
+        click.echo(
+            f"  Cost per million requests: ${savings['assumptions']['cost_per_million_requests']}"
+        )
+        click.echo(
+            f"  Infrastructure cost per endpoint: ${savings['assumptions']['infrastructure_cost_per_endpoint']}/month"
+        )
+
+    finally:
+        session.close()

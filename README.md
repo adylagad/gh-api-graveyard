@@ -383,3 +383,81 @@ Duplicate endpoints: 15
 - **Parallel processing**: Scans multiple services concurrently (4 workers by default)
 - **Configurable workers**: Use `--workers` flag to adjust parallelism
 - **Streaming architecture**: Memory-efficient even for large organizations
+
+## Advanced Analytics & Historical Tracking 📊
+
+Track endpoint usage over time, identify trends, and calculate cost savings.
+
+### Historical Tracking
+
+All scan results are automatically saved to a local SQLite database for historical analysis:
+
+```bash
+# Scans are automatically saved
+gh api-graveyard scan
+
+# View scan history
+gh api-graveyard history --service my-api --limit 10
+```
+
+### Trend Analysis
+
+Analyze how endpoint usage changes over time:
+
+```bash
+# Analyze trends over last 30 days
+gh api-graveyard trends my-api --days 30
+```
+
+Output shows:
+- Current endpoint state
+- Trends (increasing/decreasing/stable)
+- Average metrics over time period
+- Time-series data for visualization
+
+### Scan Comparison
+
+Compare two scans to see what changed:
+
+```bash
+# Compare scan #5 with scan #10
+gh api-graveyard compare 5 10
+```
+
+Shows:
+- Endpoints added/removed
+- Endpoints that became unused/used
+- Usage changes (increased/decreased)
+
+### Cost Analysis
+
+Calculate potential savings from removing unused endpoints:
+
+```bash
+# Estimate cost savings
+gh api-graveyard cost-analysis my-api
+```
+
+Provides:
+- Monthly/annual/3-year savings estimates
+- Based on AWS API Gateway pricing
+- Infrastructure cost assumptions
+- ROI calculations
+
+**Example Output:**
+```
+Unused endpoints: 15
+
+Potential Savings:
+  Monthly: $1.50
+  Annual: $18.00
+  3-Year: $54.00
+```
+
+### Database Location
+
+Scan history is stored in `gh-api-graveyard.db` in your current directory. You can:
+- Back up this file to preserve history
+- Share it with team members
+- Query it directly with SQLite tools
+- Use PostgreSQL/MySQL for production (via connection string)

@@ -63,9 +63,7 @@ class TestMultiServiceConfig:
 
     def test_create_multi_service_config(self):
         """Test creating a multi-service config."""
-        service = ServiceConfig(
-            name="test-service", spec_path="spec.yaml", logs_path="logs.jsonl"
-        )
+        service = ServiceConfig(name="test-service", spec_path="spec.yaml", logs_path="logs.jsonl")
         config = MultiServiceConfig(services=[service], org="test-org")
 
         assert len(config.services) == 1
