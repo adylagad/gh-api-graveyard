@@ -310,3 +310,76 @@ pytest tests/performance/ -v -s
 pytest tests/ -m slow -v -s
 ```
 
+
+## Multi-Service Architecture 🏗️
+
+For organizations with multiple microservices, gh-api-graveyard supports scanning and aggregating results across your entire service ecosystem.
+
+### Scanning Multiple Services
+
+Create a multi-service configuration file (`services.yaml`):
+
+```yaml
+org: my-company
+services:
+  - name: users-api
+    spec: ./users-api/openapi.yaml
+    logs: ./users-api/logs/access.jsonl
+    repo: my-company/users-api
+  
+  - name: orders-api
+    spec: ./orders-api/openapi.yaml
+    logs: ./orders-api/logs/access.jsonl
+    repo: my-company/orders-api
+```
+
+Then scan all services in parallel:
+
+```bash
+gh api-graveyard scan-multi --config services.yaml --output org-report.json
+```
+
+### GitHub Organization Scanning
+
+Automatically discover and scan all services in a GitHub organization:
+
+```bash
+# Discover services in an organization
+gh api-graveyard discover-org my-org --output org-services.yaml
+
+# Review and edit the generated config
+vim org-services.yaml
+
+# Scan all discovered services
+gh api-graveyard scan-multi --config org-services.yaml
+```
+
+### Aggregated Reporting
+
+The multi-service scan generates an aggregated report with:
+
+- **Organization-wide statistics**: Total endpoints, unused endpoints across all services
+- **Duplicate endpoint detection**: Find duplicate API endpoints across services
+- **Service comparison**: Compare endpoint usage patterns
+- **Individual service reports**: Detailed results for each service
+
+Example output:
+
+```
+============================================================
+MULTI-SERVICE SCAN SUMMARY
+============================================================
+Total services scanned: 12
+Successful scans: 11
+Failed scans: 1
+Total endpoints: 847
+Total unused: 93 (11%)
+Duplicate endpoints: 15
+============================================================
+```
+
+### Performance
+
+- **Parallel processing**: Scans multiple services concurrently (4 workers by default)
+- **Configurable workers**: Use `--workers` flag to adjust parallelism
+- **Streaming architecture**: Memory-efficient even for large organizations

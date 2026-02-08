@@ -339,3 +339,68 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+@cli.command()
+@click.option(
+    "--config", required=True, type=click.Path(exists=True), help="Multi-service config YAML"
+)
+@click.option("--output", default="multi-service-report.json", help="Output report path")
+@click.option("--workers", default=4, type=int, help="Number of parallel workers")
+def scan_multi(config, output, workers):
+    """Scan multiple services in parallel."""
+    from detector.multi_service import (
+        MultiServiceConfig,
+        generate_aggregated_report,
+        save_aggregated_report,
+        scan_multiple_services,
+    )
+
+    click.echo(f"Loading multi-service config from {config}...")
+    multi_config = MultiServiceConfig.load(config)
+
+    click.echo(f"Scanning {len(multi_config.services)} services with {workers} workers...")
+    results = scan_multiple_services(multi_config, max_workers=workers)
+
+    click.echo("\nGenerating aggregated report...")
+    report = generate_aggregated_report(results)
+
+    save_aggregated_report(report, output)
+
+    # Display summary
+    summary = report["summary"]
+    click.echo("\n" + "=" * 60)
+    click.echo("MULTI-SERVICE SCAN SUMMARY")
+    click.echo("=" * 60)
+    click.echo(f"Total services scanned: {summary['total_services']}")
+    click.echo(f"Successful scans: {summary['successful_scans']}")
+    click.echo(f"Failed scans: {summary['failed_scans']}")
+    click.echo(f"Total endpoints: {summary['total_endpoints']}")
+    click.echo(f"Total unused: {summary['total_unused']} ({summary['unused_percentage']}%)")
+    click.echo(f"Duplicate endpoints: {report['duplicate_count']}")
+    click.echo("=" * 60)
+    click.echo(f"\nFull report saved to: {output}")
+
+
+@cli.command()
+@click.argument("org_name")
+@click.option("--token", help="GitHub token (or use GITHUB_TOKEN env)")
+@click.option("--output", default="org-services.yaml", help="Output config path")
+@click.option("--max-repos", type=int, help="Maximum repos to scan")
+@click.option("--exclude", multiple=True, help="Repos to exclude")
+def discover_org(org_name, token, output, max_repos, exclude):
+    """Discover services in a GitHub organization."""
+    from detector.github_org import scan_github_org
+
+    click.echo(f"Scanning GitHub organization: {org_name}")
+    if max_repos:
+        click.echo(f"Limiting to {max_repos} repositories")
+
+    config = scan_github_org(
+        org_name, github_token=token, max_repos=max_repos, exclude_repos=list(exclude)
+    )
+
+    config.save(output)
+    click.echo(f"\nDiscovered {len(config.services)} services")
+    click.echo(f"Configuration saved to: {output}")
+    click.echo(f"\nNext: gh api-graveyard scan-multi --config {output}")

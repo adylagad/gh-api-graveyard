@@ -1,0 +1,24 @@
+# Multi-Service Configuration Example
+#
+# This file demonstrates how to configure gh-api-graveyard to scan
+# multiple services simultaneously.
+
+# Organization name (optional, for documentation)
+org: example-org
+
+# List of services to scan
+services:
+  - name: users-api
+    spec: ./services/users-api/openapi.yaml
+    logs: ./services/users-api/logs/access.jsonl
+    repo: example-org/users-api
+
+  - name: orders-api
+    spec: ./services/orders-api/openapi.yaml
+    logs: ./services/orders-api/logs/access.jsonl
+    repo: example-org/orders-api
+
+  - name: payments-api
+    spec: ./services/payments-api/openapi.yaml
+    logs: ./services/payments-api/logs/access.jsonl
+    repo: example-org/payments-api
