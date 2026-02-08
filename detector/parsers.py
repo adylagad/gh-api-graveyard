@@ -5,14 +5,18 @@ from pathlib import Path
 from typing import Dict, Generator, List, Union
 
 import yaml
+from prance import ResolvingParser
 
 
 def parse_openapi_endpoints(file_path: Union[str, Path]) -> List[Dict[str, str]]:
     """
-    Parse an OpenAPI YAML file and return a list of endpoints.
+    Parse an OpenAPI/Swagger file and return a list of endpoints.
+
+    Supports both OpenAPI 3.0+ and Swagger 2.0 specifications.
+    Swagger 2.0 specs are automatically converted to OpenAPI 3.0 format.
 
     Args:
-        file_path: Path to the OpenAPI YAML file
+        file_path: Path to the OpenAPI YAML/JSON file
 
     Returns:
         List of dicts with 'method' and 'path' keys
@@ -20,11 +24,19 @@ def parse_openapi_endpoints(file_path: Union[str, Path]) -> List[Dict[str, str]]
     endpoints = []
 
     try:
-        with open(file_path, "r") as f:
-            spec = yaml.safe_load(f)
-    except (FileNotFoundError, yaml.YAMLError) as e:
-        print(f"Error loading YAML file: {e}")
-        return endpoints
+        # Use prance to parse and resolve $refs automatically
+        # This handles both Swagger 2.0 and OpenAPI 3.0+
+        parser = ResolvingParser(str(file_path))
+        spec = parser.specification
+    except Exception as e:
+        # Fallback to basic YAML parsing if prance fails
+        print(f"Warning: Advanced parsing failed, using fallback: {e}")
+        try:
+            with open(file_path, "r") as f:
+                spec = yaml.safe_load(f)
+        except (FileNotFoundError, yaml.YAMLError) as e2:
+            print(f"Error loading file: {e2}")
+            return endpoints
 
     if not spec or not isinstance(spec, dict):
         return endpoints

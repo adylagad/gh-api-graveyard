@@ -6,6 +6,16 @@ from pathlib import Path
 import click
 
 from .analysis import analyze_endpoint_usage
+from .console import (
+    console,
+    create_results_table,
+    get_spinner_progress,
+    print_error,
+    print_info,
+    print_section,
+    print_success,
+    print_warning,
+)
 from .discovery import get_spec_and_logs, load_config
 from .git_ops import (
     create_branch_and_commit,
@@ -62,40 +72,46 @@ def scan(spec, logs, service, window, output):
     config = load_config() or {}
 
     # Get spec and logs (auto-discover or from args)
-    spec_path, logs_path = get_spec_and_logs(spec, logs)
+    with get_spinner_progress() as progress:
+        progress.add_task("Discovering files...", total=None)
+        spec_path, logs_path = get_spec_and_logs(spec, logs)
 
     if not spec_path:
-        click.echo("❌ Could not find OpenAPI spec. Please specify with --spec", err=True)
-        click.echo("   Searched for: openapi.yaml, spec/openapi.yaml, etc.", err=True)
+        print_error("Could not find OpenAPI spec. Please specify with --spec")
+        print_info("Searched for: openapi.yaml, spec/openapi.yaml, etc.")
         raise click.Abort()
 
     if not logs_path:
-        click.echo("❌ Could not find log files. Please specify with --logs", err=True)
-        click.echo("   Searched for: logs/*.jsonl, access.jsonl, etc.", err=True)
+        print_error("Could not find log files. Please specify with --logs")
+        print_info("Searched for: logs/*.jsonl, access.jsonl, etc.")
         raise click.Abort()
 
     # Use service name from config if not provided
     if not service:
         service = config.get("service", "API Service")
 
-    click.echo(f"🔍 Scanning {service}...\n")
-    click.echo(f"📄 Spec: {spec_path}")
-    click.echo(f"📊 Logs: {logs_path}\n")
+    print_section(f"Scanning {service}")
+    console.print(f"[cyan]📄 Spec:[/cyan] {spec_path}")
+    console.print(f"[cyan]📊 Logs:[/cyan] {logs_path}\n")
 
     # Load OpenAPI spec
     try:
-        endpoints = parse_openapi_endpoints(spec_path)
-        click.echo(f"   Found {len(endpoints)} endpoints")
+        with get_spinner_progress() as progress:
+            progress.add_task("Parsing OpenAPI spec...", total=None)
+            endpoints = parse_openapi_endpoints(spec_path)
+        print_success(f"Found {len(endpoints)} endpoints")
     except Exception as e:
-        click.echo(f"❌ Error loading spec: {e}", err=True)
+        print_error(f"Error loading spec: {e}")
         raise click.Abort()
 
     # Load access logs
     try:
-        log_entries = load_logs(logs_path)
-        click.echo(f"   Found {len(log_entries)} log entries")
+        with get_spinner_progress() as progress:
+            progress.add_task("Loading access logs...", total=None)
+            log_entries = load_logs(logs_path)
+        print_success(f"Found {len(log_entries)} log entries")
     except Exception as e:
-        click.echo(f"❌ Error loading logs: {e}", err=True)
+        print_error(f"Error loading logs: {e}")
         raise click.Abort()
 
     # Filter logs by time window if specified
@@ -116,32 +132,39 @@ def scan(spec, logs, service, window, output):
                 filtered_logs.append(log)
 
         log_entries = filtered_logs
-        click.echo(f"   Filtered to {len(log_entries)} entries within {window} days")
+        print_info(f"Filtered to {len(log_entries)} entries within {window} days")
 
     # Analyze endpoint usage
-    click.echo("\n🔬 Analyzing endpoint usage...")
+    print_section("Analysis")
     try:
-        results = analyze_endpoint_usage(endpoints, log_entries)
+        with get_spinner_progress() as progress:
+            progress.add_task("Analyzing endpoint usage...", total=None)
+            results = analyze_endpoint_usage(endpoints, log_entries)
 
-        unused_count = sum(1 for r in results if r["call_count"] == 0)
-        high_confidence = sum(1 for r in results if r["confidence_score"] >= 80)
+        unused = [r for r in results if r["call_count"] == 0]
+        high_confidence = [r for r in results if r["confidence_score"] >= 80]
 
-        click.echo(f"   Total endpoints: {len(results)}")
-        click.echo(f"   Never called: {unused_count}")
-        click.echo(f"   High confidence unused (≥80): {high_confidence}")
+        # Display results table
+        console.print()
+        console.print(create_results_table(endpoints, unused))
+
+        if unused:
+            console.print()
+            print_warning(f"Found {len(unused)} unused endpoints")
+            print_info(f"{len(high_confidence)} with high confidence (≥80)")
     except Exception as e:
-        click.echo(f"❌ Error analyzing: {e}", err=True)
+        print_error(f"Error analyzing: {e}")
         raise click.Abort()
 
     # Generate markdown report
-    click.echo(f"\n📝 Generating report: {output}")
+    print_section("Report Generation")
     try:
         markdown = generate_markdown_report(results, service_name=service)
 
         with open(output, "w") as f:
             f.write(markdown)
 
-        click.echo(f"✅ Report written to {output}")
+        print_success(f"Report written to {output}")
 
         # Save to database for historical tracking
         try:
@@ -156,7 +179,7 @@ def scan(spec, logs, service, window, output):
                 spec_path=str(spec_path),
                 logs_path=str(logs_path),
             )
-            click.echo("✓ Scan saved to history database")
+            print_success("Scan saved to history database")
         except Exception as e:
             click.echo(f"Warning: Could not save to database: {e}", err=True)
 
@@ -435,22 +458,25 @@ def history(service, limit):
     scans = db.get_scans(service_name=service, limit=limit)
 
     if not scans:
-        click.echo("No scan history found.")
+        print_warning("No scan history found.")
         return
 
-    click.echo("\n" + "=" * 80)
-    click.echo("SCAN HISTORY")
-    click.echo("=" * 80)
+    from detector.console import create_history_table
 
-    for scan in scans:
-        status = "✓" if scan.success else "✗"
-        click.echo(f"\n{status} Scan #{scan.id} - {scan.service_name}")
-        click.echo(f"  Time: {scan.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
-        click.echo(f"  Endpoints: {scan.total_endpoints} total, {scan.unused_endpoints} unused")
-        if scan.scan_duration_seconds:
-            click.echo(f"  Duration: {scan.scan_duration_seconds:.2f}s")
-        if scan.repo:
-            click.echo(f"  Repo: {scan.repo}")
+    # Convert scans to dict format for table
+    scan_dicts = [
+        {
+            "id": scan.id,
+            "service_name": scan.service_name,
+            "timestamp": scan.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "total_endpoints": scan.total_endpoints,
+            "unused_endpoints": scan.unused_endpoints,
+        }
+        for scan in scans
+    ]
+
+    console.print()
+    console.print(create_history_table(scan_dicts))
 
 
 @cli.command()
@@ -464,24 +490,23 @@ def trends(service_name, days):
     db = DatabaseManager()
     analyzer = TrendAnalyzer(db)
 
-    click.echo(f"\nAnalyzing trends for {service_name} over last {days} days...")
-
-    trend_data = analyzer.get_trend_data(service_name, days=days)
+    with get_spinner_progress() as progress:
+        progress.add_task(f"Analyzing trends for {service_name}...", total=None)
+        trend_data = analyzer.get_trend_data(service_name, days=days)
 
     if "error" in trend_data:
-        click.echo(f"Error: {trend_data['error']}")
+        print_error(f"Error: {trend_data['error']}")
         return
 
-    click.echo("\n" + "=" * 80)
-    click.echo(f"TREND ANALYSIS: {service_name}")
-    click.echo("=" * 80)
+    print_section(f"Trend Analysis: {service_name}")
 
     # Current state
     current = trend_data["current"]
-    click.echo("\nCurrent State:")
-    click.echo(f"  Total endpoints: {current['total_endpoints']}")
-    click.echo(
-        f"  Unused endpoints: {current['unused_endpoints']} ({current['unused_percentage']}%)"
+    console.print("\n[bold]Current State:[/bold]")
+    console.print(f"  Total endpoints: [cyan]{current['total_endpoints']}[/cyan]")
+    console.print(
+        f"  Unused endpoints: [red]{current['unused_endpoints']}[/red] "
+        f"([yellow]{current['unused_percentage']}%[/yellow])"
     )
 
     # Trends
@@ -567,7 +592,7 @@ def cost_analysis(service_name):
     # Get most recent scan
     scans = db.get_scans(service_name=service_name, limit=1)
     if not scans:
-        click.echo(f"No scans found for service: {service_name}")
+        print_warning(f"No scans found for service: {service_name}")
         return
 
     scan = scans[0]
@@ -587,22 +612,22 @@ def cost_analysis(service_name):
         calculator = CostCalculator()
         savings = calculator.calculate_savings(unused)
 
-        click.echo("\n" + "=" * 80)
-        click.echo(f"COST ANALYSIS: {service_name}")
-        click.echo("=" * 80)
+        print_section(f"Cost Analysis: {service_name}")
 
-        click.echo(f"\nUnused endpoints: {savings['total_unused_endpoints']}")
-        click.echo("\nPotential Savings:")
-        click.echo(f"  Monthly: ${savings['monthly_savings_usd']}")
-        click.echo(f"  Annual: ${savings['annual_savings_usd']}")
-        click.echo(f"  3-Year: ${savings['three_year_savings_usd']}")
+        console.print(f"\n[yellow]Unused endpoints:[/yellow] {savings['total_unused_endpoints']}")
 
-        click.echo("\nAssumptions:")
-        click.echo(
-            f"  Cost per million requests: ${savings['assumptions']['cost_per_million_requests']}"
+        # Display cost table
+        from detector.console import create_cost_table
+
+        console.print()
+        console.print(create_cost_table(savings))
+
+        console.print("\n[dim]Assumptions:[/dim]")
+        console.print(
+            f"  Cost per million requests: [cyan]${savings['assumptions']['cost_per_million_requests']}[/cyan]"
         )
-        click.echo(
-            f"  Infrastructure cost per endpoint: ${savings['assumptions']['infrastructure_cost_per_endpoint']}/month"
+        console.print(
+            f"  Infrastructure cost per endpoint: [cyan]${savings['assumptions']['infrastructure_cost_per_endpoint']}/month[/cyan]"
         )
 
     finally:

@@ -1,0 +1,72 @@
+swagger: "2.0"
+info:
+  title: Sample Swagger 2.0 API
+  description: Test API for Swagger 2.0 compatibility
+  version: 1.0.0
+host: api.example.com
+basePath: /v1
+schemes:
+  - https
+paths:
+  /users:
+    get:
+      summary: List all users
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+    post:
+      summary: Create a user
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        201:
+          description: Created
+  /users/{id}:
+    get:
+      summary: Get a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+    put:
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+    delete:
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+  /products:
+    get:
+      summary: List products
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK

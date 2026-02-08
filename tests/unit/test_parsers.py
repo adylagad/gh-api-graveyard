@@ -263,3 +263,65 @@ class TestCountLogEntries:
         """Test that count skips invalid JSON lines."""
         count = count_log_entries(invalid_logs)
         assert count == 2  # Only valid lines
+
+
+class TestSwagger20Support:
+    """Test Swagger 2.0 parsing and conversion."""
+
+    @pytest.fixture
+    def swagger_2_0_spec(self, fixtures_dir):
+        """Return path to Swagger 2.0 spec."""
+        return fixtures_dir / "swagger_2_0.yaml"
+
+    def test_parse_swagger_2_0_spec(self, swagger_2_0_spec):
+        """Test parsing a Swagger 2.0 specification."""
+        endpoints = parse_openapi_endpoints(swagger_2_0_spec)
+
+        # Should successfully parse Swagger 2.0 spec
+        assert len(endpoints) == 6
+
+        # Check specific endpoints
+        methods_paths = [(e["method"], e["path"]) for e in endpoints]
+        assert ("GET", "/users") in methods_paths
+        assert ("POST", "/users") in methods_paths
+        assert ("GET", "/users/{id}") in methods_paths
+        assert ("PUT", "/users/{id}") in methods_paths
+        assert ("DELETE", "/users/{id}") in methods_paths
+        assert ("GET", "/products") in methods_paths
+
+    def test_swagger_2_0_structure(self, swagger_2_0_spec):
+        """Test that Swagger 2.0 files are recognized correctly."""
+        import yaml
+
+        with open(swagger_2_0_spec) as f:
+            spec = yaml.safe_load(f)
+
+        # Verify it's a Swagger 2.0 spec
+        assert spec.get("swagger") == "2.0"
+        assert "paths" in spec
+        assert spec.get("info", {}).get("version") == "1.0.0"
+
+    def test_mixed_specs_in_project(self, sample_openapi, swagger_2_0_spec):
+        """Test that both OpenAPI 3.0 and Swagger 2.0 can be parsed."""
+        # Parse OpenAPI 3.0
+        openapi_endpoints = parse_openapi_endpoints(sample_openapi)
+        assert len(openapi_endpoints) > 0
+
+        # Parse Swagger 2.0
+        swagger_endpoints = parse_openapi_endpoints(swagger_2_0_spec)
+        assert len(swagger_endpoints) > 0
+
+        # Both should return valid endpoint structures
+        for endpoint in openapi_endpoints + swagger_endpoints:
+            assert "method" in endpoint
+            assert "path" in endpoint
+            assert endpoint["method"] in [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS",
+                "HEAD",
+                "TRACE",
+            ]
