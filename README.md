@@ -26,9 +26,29 @@ gh api-graveyard scan
 # 2. Create PR to remove unused endpoints
 gh api-graveyard prune --dry-run  # Preview first
 gh api-graveyard prune            # Create PR
+
+# 3. View web dashboard (NEW!)
+gh api-graveyard serve            # Opens beautiful web interface
 ```
 
 **That's it!** No more long command lines with --spec and --logs flags!
+
+## 🌐 Web Dashboard
+
+Launch a beautiful web interface to visualize your API analytics:
+
+```bash
+gh api-graveyard serve
+```
+
+This opens an interactive dashboard with:
+- 📊 **Summary cards** - Services, endpoints, unused count, potential savings
+- 📈 **Trend charts** - Track endpoint usage over time with Chart.js
+- 💰 **Cost analysis** - Visual breakdown of potential monthly savings  
+- 🔍 **Service details** - Interactive endpoint lists with filtering
+- 📜 **Scan history** - View all historical scans
+
+The dashboard runs locally on `http://localhost:5000` and connects to your existing scan database.
 
 ## 🔧 How It Works
 

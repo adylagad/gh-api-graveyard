@@ -7,4 +7,6 @@ tqdm>=4.66.0
 SQLAlchemy>=2.0.0
 prance[osv]>=23.6.0.0
 rich>=13.0.0
+Flask>=3.0.0
+Flask-CORS>=4.0.0
 

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trends - gh-api-graveyard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .card {
+            @apply bg-white rounded-lg shadow-md p-6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-800">
+                            ⚰️ gh-api-graveyard
+                        </h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/trends.html" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Trends
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="px-4 py-6 sm:px-0">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Trends & Analytics</h2>
+            
+            <!-- Service Selector -->
+            <div class="flex space-x-4 mb-6">
+                <select id="service-select" class="block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Select a service...</option>
+                </select>
+                
+                <select id="days-select" class="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Current State -->
+        <div id="current-state" class="px-4 py-6 sm:px-0" style="display: none;">
+            <div class="card mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Current State</h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Total Endpoints</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-gray-900" id="current-total">-</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Unused Endpoints</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-red-600" id="current-unused">-</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Unused Percentage</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-yellow-600" id="current-percentage">-</dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div id="charts-container" class="px-4 py-6 sm:px-0" style="display: none;">
+            <!-- Endpoint Count Trend -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Endpoint Count Over Time</h3>
+                <div class="h-64">
+                    <canvas id="endpoint-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Unused Trend -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Unused Endpoints Trend</h3>
+                <div class="h-64">
+                    <canvas id="unused-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Cost Over Time -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Potential Monthly Savings</h3>
+                <div class="h-64">
+                    <canvas id="cost-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Data Message -->
+        <div id="no-data" class="px-4 py-6 sm:px-0">
+            <div class="card text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No trend data available</h3>
+                <p class="mt-1 text-sm text-gray-500">Select a service to view trends and analytics.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = '/api';
+        let endpointChart, unusedChart, costChart;
+        
+        // Get service from URL if provided
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlService = urlParams.get('service');
+        
+        // Load services into dropdown
+        async function loadServices() {
+            try {
+                const response = await fetch(`${API_BASE}/services`);
+                const services = await response.json();
+                
+                const select = document.getElementById('service-select');
+                select.innerHTML = '<option value="">Select a service...</option>' +
+                    services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                
+                // Select service from URL if provided
+                if (urlService && services.find(s => s.name === urlService)) {
+                    select.value = urlService;
+                    loadTrends();
+                }
+            } catch (error) {
+                console.error('Error loading services:', error);
+            }
+        }
+        
+        async function loadTrends() {
+            const service = document.getElementById('service-select').value;
+            const days = document.getElementById('days-select').value;
+            
+            if (!service) {
+                document.getElementById('no-data').style.display = 'block';
+                document.getElementById('current-state').style.display = 'none';
+                document.getElementById('charts-container').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/trends/${encodeURIComponent(service)}?days=${days}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('no-data').style.display = 'block';
+                    document.getElementById('current-state').style.display = 'none';
+                    document.getElementById('charts-container').style.display = 'none';
+                    return;
+                }
+                
+                // Show sections
+                document.getElementById('no-data').style.display = 'none';
+                document.getElementById('current-state').style.display = 'block';
+                document.getElementById('charts-container').style.display = 'block';
+                
+                // Update current state
+                document.getElementById('current-total').textContent = data.current.total_endpoints;
+                document.getElementById('current-unused').textContent = data.current.unused_endpoints;
+                document.getElementById('current-percentage').textContent = `${data.current.unused_percentage}%`;
+                
+                // Render charts
+                renderCharts(data);
+            } catch (error) {
+                console.error('Error loading trends:', error);
+            }
+        }
+        
+        function renderCharts(data) {
+            const dates = data.scans.map(s => new Date(s.timestamp).toLocaleDateString());
+            const totalEndpoints = data.scans.map(s => s.total_endpoints);
+            const unusedEndpoints = data.scans.map(s => s.unused_endpoints);
+            const savings = unusedEndpoints.map(u => u * 0.10); // $0.10 per endpoint
+            
+            // Endpoint Count Chart
+            if (endpointChart) endpointChart.destroy();
+            const ctx1 = document.getElementById('endpoint-chart').getContext('2d');
+            endpointChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Total Endpoints',
+                        data: totalEndpoints,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Unused Endpoints Chart
+            if (unusedChart) unusedChart.destroy();
+            const ctx2 = document.getElementById('unused-chart').getContext('2d');
+            unusedChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Unused Endpoints',
+                        data: unusedEndpoints,
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Cost Chart
+            if (costChart) costChart.destroy();
+            const ctx3 = document.getElementById('cost-chart').getContext('2d');
+            costChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Monthly Savings ($)',
+                        data: savings,
+                        backgroundColor: 'rgba(34, 197, 94, 0.5)',
+                        borderColor: 'rgb(34, 197, 94)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        document.getElementById('service-select').addEventListener('change', loadTrends);
+        document.getElementById('days-select').addEventListener('change', loadTrends);
+        
+        document.addEventListener('DOMContentLoaded', loadServices);
+    </script>
+</body>
+</html>

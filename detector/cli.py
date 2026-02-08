@@ -632,3 +632,18 @@ def cost_analysis(service_name):
 
     finally:
         session.close()
+
+
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to")
+@click.option("--port", default=5000, type=int, help="Port to bind to")
+@click.option("--debug", is_flag=True, help="Enable debug mode")
+@click.option("--no-browser", is_flag=True, help="Don't open browser automatically")
+def serve(host, port, debug, no_browser):
+    """Start web dashboard server.
+
+    Launches a web interface for viewing scans, trends, and analytics.
+    """
+    from detector.web.server import run_server
+
+    run_server(host=host, port=port, debug=debug, open_browser_flag=not no_browser)
