@@ -89,6 +89,9 @@ def scan(spec, logs, service, window, output):
     # Use service name from config if not provided
     if not service:
         service = config.get("service", "API Service")
+        # Handle service as dict (with name/version) or string
+        if isinstance(service, dict):
+            service = service.get("name", "API Service")
 
     print_section(f"Scanning {service}")
     console.print(f"[cyan]📄 Spec:[/cyan] {spec_path}")

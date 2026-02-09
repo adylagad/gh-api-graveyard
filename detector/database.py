@@ -178,7 +178,13 @@ class DatabaseManager:
             if service_name:
                 query = query.filter(Scan.service_name == service_name)
 
-            return query.limit(limit).all()
+            scans = query.limit(limit).all()
+            
+            # Eagerly load relationships before closing session
+            for scan in scans:
+                _ = scan.endpoints
+            
+            return scans
 
         finally:
             session.close()
