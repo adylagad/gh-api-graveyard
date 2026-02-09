@@ -65,7 +65,8 @@ def create_app():
 
             # Calculate cost savings
             calculator = CostCalculator()
-            monthly_savings = total_unused * calculator.infrastructure_cost_per_endpoint
+            infrastructure_cost_per_endpoint = 0.10  # $0.10/month per endpoint
+            monthly_savings = total_unused * infrastructure_cost_per_endpoint
 
             session.close()
 
