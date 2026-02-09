@@ -185,9 +185,9 @@
         }
         
         function renderCharts(data) {
-            const dates = data.scans.map(s => new Date(s.timestamp).toLocaleDateString());
-            const totalEndpoints = data.scans.map(s => s.total_endpoints);
-            const unusedEndpoints = data.scans.map(s => s.unused_endpoints);
+            const dates = data.time_series.map(s => new Date(s.timestamp).toLocaleDateString());
+            const totalEndpoints = data.time_series.map(s => s.total_endpoints);
+            const unusedEndpoints = data.time_series.map(s => s.unused_endpoints);
             const savings = unusedEndpoints.map(u => u * 0.10); // $0.10 per endpoint
             
             // Endpoint Count Chart
