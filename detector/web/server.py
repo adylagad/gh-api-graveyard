@@ -1,5 +1,6 @@
 """Web server for dashboard."""
 
+import socket
 import webbrowser
 from threading import Timer
 
@@ -11,11 +12,49 @@ def open_browser(url):
     webbrowser.open(url)
 
 
+def find_available_port(host, start_port, max_attempts=10):
+    """
+    Find an available port starting from start_port.
+    
+    Args:
+        host: Host to bind to
+        start_port: Port to start searching from
+        max_attempts: Maximum number of ports to try
+    
+    Returns:
+        Available port number, or None if no port found
+    """
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            # Try to bind to the port
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((host, port))
+            sock.close()
+            return port
+        except OSError:
+            # Port is in use, try next one
+            continue
+    return None
+
+
 def run_server(host="127.0.0.1", port=5000, debug=False, open_browser_flag=True):
     """Start the Flask development server."""
     app = create_app()
 
-    url = "http://{}:{}".format(host, port)
+    # Find available port
+    original_port = port
+    available_port = find_available_port(host, port)
+    
+    if available_port is None:
+        print(f"❌ Could not find available port starting from {port}")
+        print(f"   Tried ports {port}-{port + 9}")
+        return
+    
+    if available_port != original_port:
+        print(f"ℹ️  Port {original_port} is in use, using port {available_port} instead")
+    
+    url = "http://{}:{}".format(host, available_port)
     print("\n🚀 Starting gh-api-graveyard dashboard...")
     print("📊 Dashboard: {}".format(url))
     print("🔌 API: {}/api".format(url))
@@ -25,4 +64,4 @@ def run_server(host="127.0.0.1", port=5000, debug=False, open_browser_flag=True)
         # Open browser after 1 second delay
         Timer(1.0, open_browser, args=[url]).start()
 
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=available_port, debug=debug)
